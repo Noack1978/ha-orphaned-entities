@@ -81,6 +81,8 @@ class OrphanedEntityScanner:
                 # Check how long it's been unavailable
                 last_changed = state.last_changed
                 if last_changed and last_changed < cutoff:
+                    # Show even if entity has a config_entry — long-term unavailable
+                    # is a strong signal of an orphaned browser session, removed device, etc.
                     orphan_reasons.append(f"unavailable_{inactivity_days}d")
 
             # Check: entity has no config entry and no device
@@ -93,6 +95,15 @@ class OrphanedEntityScanner:
                                    "script", "scene", "group"}
             ):
                 orphan_reasons.append("no_integration")
+
+            # Check: entity has integration/device but has been unavailable
+            # longer than the inactivity threshold — catches stale browser sessions,
+            # removed devices that left entries behind, etc.
+            # Only add this reason if no other reason was found yet (avoids duplicates)
+            if not orphan_reasons and state is not None and state.state in ("unavailable", "unknown"):
+                last_changed = state.last_changed
+                if last_changed and last_changed < cutoff:
+                    orphan_reasons.append(f"stale_{inactivity_days}d")
 
             if orphan_reasons:
                 entity_info = {

@@ -19,6 +19,10 @@ function reasonLabel(reason) {
     const days = reason.split("_")[1];
     return `Nicht verfügbar seit ${days}`;
   }
+  if (reason.startsWith("stale_")) {
+    const days = reason.split("_")[1];
+    return `Inaktiv seit ${days} Tagen (Integration vorhanden)`;
+  }
   return REASON_LABELS[reason] || reason;
 }
 
@@ -42,21 +46,26 @@ class OrphanedEntitiesCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    // Always render immediately so card is never blank
+    this._render();
     if (!this._initialized) {
       this._initialized = true;
       this._subscribeEvents();
       this._loadResults();
     }
-    if (!this.shadowRoot.innerHTML) this._render();
   }
 
   _subscribeEvents() {
-    this._hass.connection.subscribeEvents((event) => {
-      this._entities = event.data.entities || [];
-      this._ignored  = event.data.ignored  || [];
-      this._loading  = false;
-      this._render();
-    }, `${DOMAIN}_results`);
+    try {
+      this._hass.connection.subscribeEvents((event) => {
+        this._entities = event.data.entities || [];
+        this._ignored  = event.data.ignored  || [];
+        this._loading  = false;
+        this._render();
+      }, `${DOMAIN}_results`);
+    } catch (e) {
+      console.warn("orphaned-entities-card: subscribeEvents failed", e);
+    }
   }
 
   async _loadResults() {
@@ -68,7 +77,16 @@ class OrphanedEntitiesCard extends HTMLElement {
       this._message = { type: "error", text: "Fehler beim Laden: " + e.message };
       this._loading = false;
       this._render();
+      return;
     }
+    // Retry after 3s if still no results (event may have been missed)
+    setTimeout(async () => {
+      if (this._entities.length === 0 && !this._loading) {
+        try {
+          await this._hass.callService(DOMAIN, "get_results", {});
+        } catch (_) {}
+      }
+    }, 3000);
   }
 
   async _rescan() {

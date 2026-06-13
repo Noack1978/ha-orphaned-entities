@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120">
+  <!-- Icon area -->
+  <circle cx="60" cy="60" r="52" fill="#db4437"/>
+  <!-- Broom handle -->
+  <rect x="72" y="22" width="7" height="55" rx="3.5" fill="white" transform="rotate(18 72 22)"/>
+  <!-- Broom head -->
+  <ellipse cx="44" cy="82" rx="26" ry="10" fill="white" opacity="0.95"/>
+  <!-- Bristles -->
+  <line x1="24" y1="82" x2="19" y2="96" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="33" y1="86" x2="30" y2="100" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="44" y1="88" x2="43" y2="102" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="55" y1="86" x2="56" y2="100" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="64" y1="82" x2="69" y2="96" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Orphan dots -->
+  <circle cx="28" cy="70" r="4" fill="white" opacity="0.6"/>
+  <circle cx="40" cy="65" r="3" fill="white" opacity="0.5"/>
+  <circle cx="52" cy="68" r="3.5" fill="white" opacity="0.55"/>
+
+  <!-- Text -->
+  <text x="130" y="52" font-family="'Roboto','Helvetica Neue',Arial,sans-serif" font-size="32" font-weight="700" fill="#212121">Orphaned</text>
+  <text x="130" y="88" font-family="'Roboto','Helvetica Neue',Arial,sans-serif" font-size="32" font-weight="400" fill="#db4437">Entities</text>
+</svg>
