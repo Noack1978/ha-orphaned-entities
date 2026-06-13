@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Orphaned Entities einrichten",
+        "description": "Richtet den Orphaned Entities Scanner ein.",
+        "data": {
+          "scan_interval": "Scan-Intervall (Stunden)",
+          "inactivity_days": "Inaktivitätsschwelle (Tage)",
+          "ignored_domains": "Ignorierte Domains (kommagetrennt)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Integration ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Einstellungen",
+        "data": {
+          "scan_interval": "Scan-Intervall (Stunden)",
+          "inactivity_days": "Inaktivitätsschwelle (Tage)",
+          "ignored_domains": "Ignorierte Domains (kommagetrennt)"
+        }
+      }
+    }
+  }
+}
