@@ -210,15 +210,18 @@ async def _register_frontend(hass: HomeAssistant) -> None:
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set up via YAML (unused but registers static path)."""
-    from homeassistant.components.http import StaticPathConfig
-    await hass.http.async_register_static_paths([
-        StaticPathConfig(
-            "/orphaned_entities_card",
-            hass.config.path("custom_components/orphaned_entities/www"),
-            cache_headers=False,
-        )
-    ])
+    """Set up integration (runs once). Registers frontend resource."""
+    from homeassistant.core import CoreState, EVENT_HOMEASSISTANT_STARTED
+    from .frontend import JSModuleRegistration
+
+    async def _register_frontend(_event=None) -> None:
+        await JSModuleRegistration(hass).async_register()
+
+    if hass.state is CoreState.running:
+        await _register_frontend()
+    else:
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _register_frontend)
+
     return True
 
 
