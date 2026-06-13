@@ -45,6 +45,18 @@ class OrphanedEntitiesData:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Orphaned Entities from a config entry."""
+    # Register frontend resource (idempotent)
+    from homeassistant.core import CoreState, EVENT_HOMEASSISTANT_STARTED
+    from .frontend import JSModuleRegistration
+
+    async def _register_frontend(_event=None) -> None:
+        await JSModuleRegistration(hass).async_register()
+
+    if hass.state is CoreState.running:
+        await _register_frontend()
+    else:
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _register_frontend)
+
     store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
     stored = await store.async_load() or {}
 
@@ -79,9 +91,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Register services
     _register_services(hass, entry)
-
-    # Register frontend resource
-    await _register_frontend(hass)
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
@@ -188,41 +197,6 @@ def _register_services(hass: HomeAssistant, entry: ConfigEntry) -> None:
         hass.services.async_register(DOMAIN, "ignore_entity", handle_ignore_entity)
         hass.services.async_register(DOMAIN, "unignore_entity", handle_unignore_entity)
 
-
-async def _register_frontend(hass: HomeAssistant) -> None:
-    """Register the Lovelace card resource."""
-    from homeassistant.components.frontend import async_register_built_in_panel
-    from homeassistant.components.lovelace.resources import ResourceStorageCollection
-    import homeassistant.components.lovelace as lovelace_comp
-
-    resource_url = "/orphaned_entities_card/orphaned-entities-card.js"
-    try:
-        resources = hass.data.get("lovelace", {}).get("resources")
-        if resources is None:
-            return
-        current = [r["url"] for r in resources.async_items()]
-        if resource_url not in current:
-            await resources.async_create_item(
-                {"res_type": "module", "url": resource_url}
-            )
-    except Exception as err:
-        _LOGGER.debug("Could not auto-register frontend resource: %s", err)
-
-
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set up integration (runs once). Registers frontend resource."""
-    from homeassistant.core import CoreState, EVENT_HOMEASSISTANT_STARTED
-    from .frontend import JSModuleRegistration
-
-    async def _register_frontend(_event=None) -> None:
-        await JSModuleRegistration(hass).async_register()
-
-    if hass.state is CoreState.running:
-        await _register_frontend()
-    else:
-        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _register_frontend)
-
-    return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
