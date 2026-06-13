@@ -92,7 +92,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register services
     _register_services(hass, entry)
 
-    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
 
 
@@ -103,9 +102,6 @@ async def _do_scan(hass: HomeAssistant, entry: ConfigEntry) -> None:
     _LOGGER.debug("Orphaned entities scan complete: %d found", len(runtime.last_scan_results))
 
 
-async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Handle options update."""
-    await hass.config_entries.async_reload(entry.entry_id)
 
 
 def _register_services(hass: HomeAssistant, entry: ConfigEntry) -> None:
