@@ -389,14 +389,17 @@ class OrphanedEntitiesCard extends HTMLElement {
     `;
 
     this._attachEvents();
-    // Restore focus to active search field after render
+    // Restore focus after browser has finished painting the new DOM
     if (this._activeSearchId) {
-      const el = this.shadowRoot.getElementById(this._activeSearchId);
-      if (el) {
-        el.focus();
-        const len = el.value.length;
-        el.setSelectionRange(len, len);
-      }
+      const _sid = this._activeSearchId;
+      requestAnimationFrame(() => {
+        const el = this.shadowRoot.getElementById(_sid);
+        if (el) {
+          el.focus();
+          const len = el.value.length;
+          el.setSelectionRange(len, len);
+        }
+      });
     }
   }
 
