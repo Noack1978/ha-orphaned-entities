@@ -393,7 +393,7 @@ class OrphanedEntitiesCard extends HTMLElement {
   _renderOrphansTab(filtered, allSelected) {
     return `
       <div class="toolbar">
-        <input type="text" id="search" placeholder="Suchen nach ID, Name, Domain…" value="${this._filter}">
+        <input type="text" id="search" placeholder="Suchen… (Enter)" value="${this._filter}">
         <select id="sort">
           <option value="domain" ${this._sortBy === "domain" ? "selected" : ""}>Sortierung: Domain</option>
           <option value="name"   ${this._sortBy === "name"   ? "selected" : ""}>Sortierung: Name</option>
