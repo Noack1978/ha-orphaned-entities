@@ -2,6 +2,7 @@
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![GitHub Release](https://img.shields.io/github/release/Noack1978/ha-orphaned-entities.svg)](https://github.com/Noack1978/ha-orphaned-entities/releases)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/Noack1978/ha-orphaned-entities/releases/tag/v1.1.0)
 
 Findet verwaiste oder dauerhaft inaktive Entitäten in Home Assistant und ermöglicht es, diese direkt per Lovelace-Karte zu **deaktivieren**, **löschen** oder für zukünftige Scans zu **ignorieren**.
 
