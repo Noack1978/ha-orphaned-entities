@@ -46,13 +46,13 @@ class OrphanedEntitiesCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    // Always render immediately so card is never blank
-    this._render();
     if (!this._initialized) {
       this._initialized = true;
+      this._render(); // initial render only
       this._subscribeEvents();
       this._loadResults();
     }
+    // Do NOT re-render on every hass update — only event callbacks trigger render
   }
 
   _subscribeEvents() {
