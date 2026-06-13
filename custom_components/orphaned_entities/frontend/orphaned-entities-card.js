@@ -40,6 +40,7 @@ class OrphanedEntitiesCard extends HTMLElement {
     this._message  = null;
     this._confirmAction = null;
     this._initialized   = false;
+    this._activeSearchId = null;
   }
 
   setConfig(config) { this._config = config; }
@@ -388,6 +389,15 @@ class OrphanedEntitiesCard extends HTMLElement {
     `;
 
     this._attachEvents();
+    // Restore focus to active search field after render
+    if (this._activeSearchId) {
+      const el = this.shadowRoot.getElementById(this._activeSearchId);
+      if (el) {
+        el.focus();
+        const len = el.value.length;
+        el.setSelectionRange(len, len);
+      }
+    }
   }
 
   _renderOrphansTab(filtered, allSelected) {
@@ -518,7 +528,9 @@ class OrphanedEntitiesCard extends HTMLElement {
     root.getElementById("btn-delete")?.addEventListener("click",  () => this._performAction("delete"));
     root.getElementById("btn-ignore")?.addEventListener("click",  () => this._performAction("ignore"));
     root.getElementById("select-all")?.addEventListener("click",  () => this._toggleSelectAll());
-    root.getElementById("search")?.addEventListener("input", e => { this._filter = e.target.value; this._render(); });
+    root.getElementById("search")?.addEventListener("input", e => { this._activeSearchId = "search"; this._filter = e.target.value; this._render(); });
+    root.getElementById("search")?.addEventListener("focus", () => { this._activeSearchId = "search"; });
+    root.getElementById("search")?.addEventListener("blur",  () => { this._activeSearchId = null; });
     root.getElementById("sort")?.addEventListener("change",  e => { this._sortBy = e.target.value; this._render(); });
 
     root.querySelectorAll("[data-cb]").forEach(cb => {
@@ -531,7 +543,9 @@ class OrphanedEntitiesCard extends HTMLElement {
     // Ignored tab
     root.getElementById("btn-unignore")?.addEventListener("click", () => this._unignoreSelected());
     root.getElementById("select-all-ignored")?.addEventListener("click", () => this._toggleSelectAllIgnored());
-    root.getElementById("search-ignored")?.addEventListener("input", e => { this._filter = e.target.value; this._render(); });
+    root.getElementById("search-ignored")?.addEventListener("input", e => { this._activeSearchId = "search-ignored"; this._filter = e.target.value; this._render(); });
+    root.getElementById("search-ignored")?.addEventListener("focus", () => { this._activeSearchId = "search-ignored"; });
+    root.getElementById("search-ignored")?.addEventListener("blur",  () => { this._activeSearchId = null; });
 
     root.querySelectorAll("[data-ign-cb]").forEach(cb => {
       cb.addEventListener("change", e => { e.stopPropagation(); this._toggleSelectIgnored(cb.dataset.ignCb); });
