@@ -21,6 +21,52 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
+
+async def _get_last_active_from_recorder(hass, entity_id: str, cutoff) -> object:
+    """Query recorder DB for the last non-unavailable state within the cutoff window.
+    Returns a row if found (entity was active), None if only unavailable/unknown."""
+    try:
+        from homeassistant.components.recorder import get_instance
+        from homeassistant.components.recorder.util import session_scope
+        import sqlalchemy as sa
+
+        recorder_instance = get_instance(hass)
+
+        def _query():
+            with session_scope(session=recorder_instance.get_session()) as session:
+                try:
+                    return session.execute(
+                        sa.text(
+                            "SELECT s.last_updated_ts FROM states s "
+                            "JOIN states_meta sm ON s.metadata_id = sm.metadata_id "
+                            "WHERE sm.entity_id = :eid "
+                            "AND s.state NOT IN ('unavailable', 'unknown') "
+                            "AND s.last_updated_ts >= :cutoff "
+                            "ORDER BY s.last_updated_ts DESC LIMIT 1"
+                        ),
+                        {"eid": entity_id, "cutoff": cutoff.timestamp()},
+                    ).fetchone()
+                except Exception:
+                    try:
+                        return session.execute(
+                            sa.text(
+                                "SELECT last_updated FROM states "
+                                "WHERE entity_id = :eid "
+                                "AND state NOT IN ('unavailable', 'unknown') "
+                                "AND last_updated >= :cutoff "
+                                "ORDER BY last_updated DESC LIMIT 1"
+                            ),
+                            {"eid": entity_id, "cutoff": cutoff.isoformat()},
+                        ).fetchone()
+                    except Exception:
+                        return True  # Can't query → don't flag as stale
+
+        return await recorder_instance.async_add_executor_job(_query)
+    except Exception:
+        return True  # Recorder not available → don't flag as stale
+
+
+
 class OrphanedEntityScanner:
     """Scans for orphaned or inactive entities."""
 
@@ -96,13 +142,13 @@ class OrphanedEntityScanner:
             ):
                 orphan_reasons.append("no_integration")
 
-            # Check: entity has integration/device but has been unavailable
-            # longer than the inactivity threshold — catches stale browser sessions,
-            # removed devices that left entries behind, etc.
-            # Only add this reason if no other reason was found yet (avoids duplicates)
+            # Check: entity has integration/device but is persistently unavailable.
+            # We use the recorder DB to find the last time this entity had a
+            # non-unavailable/non-unknown state — reliable even after HA restarts.
             if not orphan_reasons and state is not None and state.state in ("unavailable", "unknown"):
-                last_changed = state.last_changed
-                if last_changed and last_changed < cutoff:
+                last_real_state = await _get_last_active_from_recorder(hass, entity_id, cutoff)
+                if last_real_state is None:
+                    # Never had a real state within the cutoff window → stale
                     orphan_reasons.append(f"stale_{inactivity_days}d")
 
             if orphan_reasons:
