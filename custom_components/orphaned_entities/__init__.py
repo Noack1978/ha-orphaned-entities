@@ -211,11 +211,14 @@ async def _register_frontend(hass: HomeAssistant) -> None:
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up via YAML (unused but registers static path)."""
-    hass.http.register_static_path(
-        "/orphaned_entities_card",
-        hass.config.path("custom_components/orphaned_entities/www"),
-        cache_headers=False,
-    )
+    from homeassistant.components.http import StaticPathConfig
+    await hass.http.async_register_static_paths([
+        StaticPathConfig(
+            "/orphaned_entities_card",
+            hass.config.path("custom_components/orphaned_entities/www"),
+            cache_headers=False,
+        )
+    ])
     return True
 
 
