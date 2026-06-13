@@ -1,0 +1,55 @@
+get_results:
+  name: Ergebnisse abrufen
+  description: Lädt die letzten Scan-Ergebnisse und feuert ein Event.
+
+rescan:
+  name: Neu scannen
+  description: Startet einen neuen Scan nach verwaisten Entitäten.
+
+disable_entity:
+  name: Entität deaktivieren
+  description: Deaktiviert eine verwaiste Entität.
+  fields:
+    entity_id:
+      name: Entitäts-ID
+      description: Die zu deaktivierende Entität.
+      required: true
+      example: "sensor.mein_sensor"
+      selector:
+        text:
+
+delete_entity:
+  name: Entität löschen
+  description: Löscht eine Entität aus der Registry.
+  fields:
+    entity_id:
+      name: Entitäts-ID
+      description: Die zu löschende Entität.
+      required: true
+      example: "sensor.mein_sensor"
+      selector:
+        text:
+
+ignore_entity:
+  name: Entität ignorieren
+  description: Markiert eine Entität zum Ignorieren bei zukünftigen Scans.
+  fields:
+    entity_id:
+      name: Entitäts-ID
+      description: Die zu ignorierende Entität.
+      required: true
+      example: "sensor.mein_sensor"
+      selector:
+        text:
+
+unignore_entity:
+  name: Ignorierung aufheben
+  description: Nimmt eine Entität wieder in die Auswertung auf.
+  fields:
+    entity_id:
+      name: Entitäts-ID
+      description: Die Entität deren Ignorierung aufgehoben werden soll.
+      required: true
+      example: "sensor.mein_sensor"
+      selector:
+        text:

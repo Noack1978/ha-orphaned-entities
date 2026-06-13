@@ -5,13 +5,13 @@ import logging
 from pathlib import Path
 
 from homeassistant.components.http import StaticPathConfig
-from homeassistant.components.lovelace import _register_panel  # noqa: F401
 from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 
 CARD_JS_FILENAME = "orphaned-entities-card.js"
 URL_BASE = "/orphaned_entities_card"
+_FRONTEND_DIR = Path(__file__).parent
 
 
 class JSModuleRegistration:
@@ -23,33 +23,57 @@ class JSModuleRegistration:
     async def async_register(self) -> None:
         """Register static path and Lovelace resource."""
         hass = self._hass
-        path = Path(__file__).parent / CARD_JS_FILENAME
         url_path = f"{URL_BASE}/{CARD_JS_FILENAME}"
 
-        # Register static path
+        # Register static HTTP path
         await hass.http.async_register_static_paths([
-            StaticPathConfig(URL_BASE, str(path.parent), cache_headers=False)
+            StaticPathConfig(URL_BASE, str(_FRONTEND_DIR), cache_headers=False)
         ])
+        _LOGGER.info("Orphaned Entities: static path OK → %s", url_path)
 
-        # Register as Lovelace resource
-        await self._async_register_resource(hass, url_path)
-        _LOGGER.debug("Orphaned Entities card registered at %s", url_path)
+        # Register Lovelace resource via lovelace storage
+        await _async_register_resource(hass, url_path)
 
-    @staticmethod
-    async def _async_register_resource(hass: HomeAssistant, url_path: str) -> None:
-        """Add the JS module to Lovelace resources if not already present."""
-        try:
-            lovelace = hass.data.get("lovelace")
-            if lovelace is None:
-                return
-            resources = lovelace.get("resources")
-            if resources is None:
-                return
-            if not resources.loaded:
-                await resources.async_load()
-            existing = [r["url"] for r in resources.async_items()]
-            if url_path not in existing:
-                await resources.async_create_item({"res_type": "module", "url": url_path})
-                _LOGGER.info("Orphaned Entities: Lovelace resource added: %s", url_path)
-        except Exception as err:
-            _LOGGER.debug("Could not auto-register Lovelace resource: %s", err)
+
+async def _async_register_resource(hass: HomeAssistant, url_path: str) -> None:
+    """Register JS module as Lovelace resource using storage directly."""
+    from homeassistant.helpers.storage import Store
+
+    LOVELACE_RESOURCES_STORAGE = "lovelace_resources"
+    store = Store(hass, 1, LOVELACE_RESOURCES_STORAGE)
+
+    try:
+        data = await store.async_load()
+    except Exception as err:
+        _LOGGER.warning("Orphaned Entities: could not read lovelace_resources storage: %s", err)
+        data = None
+
+    if data is None:
+        data = {"items": []}
+
+    items = data.get("items", [])
+
+    # Check if already registered
+    if any(item.get("url") == url_path for item in items):
+        _LOGGER.debug("Orphaned Entities: Lovelace resource already present")
+        return
+
+    # Add new resource entry
+    import uuid
+    new_item = {
+        "id": str(uuid.uuid4()).replace("-", "")[:8],
+        "type": "module",
+        "url": url_path,
+    }
+    items.append(new_item)
+    data["items"] = items
+
+    try:
+        await store.async_save(data)
+        _LOGGER.info("Orphaned Entities: Lovelace resource registered → %s", url_path)
+    except Exception as err:
+        _LOGGER.warning(
+            "Orphaned Entities: could not save Lovelace resource. "
+            "Add manually: URL=%s Type=JavaScript-Modul. Error: %s",
+            url_path, err,
+        )
