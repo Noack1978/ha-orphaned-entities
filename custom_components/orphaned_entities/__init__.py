@@ -70,9 +70,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     entry.runtime_data = runtime
 
-    # Initial scan
-    runtime.last_scan_results = await scanner.async_scan(ignored)
-
     # Schedule periodic scan
     interval_hours = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
@@ -91,6 +88,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Register services
     _register_services(hass, entry)
+
+    # Delay initial scan until HA is fully started (avoids 2000+ false positives)
+    async def _initial_scan(_event=None) -> None:
+        runtime.last_scan_results = await scanner.async_scan(ignored)
+        _LOGGER.info("Orphaned entities initial scan: %d found", len(runtime.last_scan_results))
+
+    if hass.state is CoreState.running:
+        await _initial_scan()
+    else:
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _initial_scan)
 
     return True
 
@@ -115,6 +122,7 @@ def _register_services(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 "entities": runtime.last_scan_results,
                 "ignored": list(runtime.ignored_entities),
             },
+            context=None,
         )
 
     async def handle_rescan(call: ServiceCall) -> None:
@@ -126,6 +134,7 @@ def _register_services(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 "entities": runtime.last_scan_results,
                 "ignored": list(runtime.ignored_entities),
             },
+            context=None,
         )
 
     async def handle_disable_entity(call: ServiceCall) -> None:
@@ -138,6 +147,19 @@ def _register_services(hass: HomeAssistant, entry: ConfigEntry) -> None:
             disabled_by=er.RegistryEntryDisabler.USER,
         )
         _LOGGER.info("Disabled orphaned entity: %s", entity_id)
+        # Remove from in-memory results immediately so card updates without rescan
+        runtime: OrphanedEntitiesData = entry.runtime_data
+        runtime.last_scan_results = [
+            e for e in runtime.last_scan_results if e["entity_id"] != entity_id
+        ]
+        hass.bus.async_fire(
+            f"{DOMAIN}_results",
+            {
+                "entities": runtime.last_scan_results,
+                "ignored": list(runtime.ignored_entities),
+            },
+            context=None,
+        )
 
     async def handle_delete_entity(call: ServiceCall) -> None:
         entity_id = call.data.get("entity_id")
@@ -148,6 +170,18 @@ def _register_services(hass: HomeAssistant, entry: ConfigEntry) -> None:
         if entry_obj:
             ent_reg.async_remove(entity_id)
             _LOGGER.info("Deleted orphaned entity: %s", entity_id)
+        runtime: OrphanedEntitiesData = entry.runtime_data
+        runtime.last_scan_results = [
+            e for e in runtime.last_scan_results if e["entity_id"] != entity_id
+        ]
+        hass.bus.async_fire(
+            f"{DOMAIN}_results",
+            {
+                "entities": runtime.last_scan_results,
+                "ignored": list(runtime.ignored_entities),
+            },
+            context=None,
+        )
 
     async def handle_ignore_entity(call: ServiceCall) -> None:
         entity_id = call.data.get("entity_id")
@@ -165,6 +199,7 @@ def _register_services(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 "entities": runtime.last_scan_results,
                 "ignored": list(runtime.ignored_entities),
             },
+            context=None,
         )
 
     async def handle_unignore_entity(call: ServiceCall) -> None:
@@ -183,6 +218,7 @@ def _register_services(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 "entities": runtime.last_scan_results,
                 "ignored": list(runtime.ignored_entities),
             },
+            context=None,
         )
 
     if not hass.services.has_service(DOMAIN, "get_results"):
