@@ -132,9 +132,18 @@ class OrphanedEntityScanner:
                     orphan_reasons.append(f"unavailable_{inactivity_days}d")
 
             # Check: entity has no config entry and no device
+            # Exclude domains/platforms that are legitimately YAML-configured
+            # without a config_entry or device (template, statistics, etc.)
+            YAML_BASED_PLATFORMS = {
+                "template", "statistics", "filter", "min_max", "utility_meter",
+                "history_stats", "trend", "threshold", "tod", "generic_hygrostat",
+                "generic_thermostat", "derivative", "integration", "bayesian",
+                "combine_state",
+            }
             if (
                 entity_entry.config_entry_id is None
                 and entity_entry.device_id is None
+                and entity_entry.platform not in YAML_BASED_PLATFORMS
                 and domain not in {"input_boolean", "input_text", "input_number",
                                    "input_select", "input_datetime", "input_button",
                                    "timer", "counter", "zone", "person", "automation",
