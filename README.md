@@ -17,6 +17,17 @@ Findet verwaiste oder dauerhaft inaktive Entitäten in Home Assistant und ermög
 - 🔎 Suche & Sortierung nach Domain, Name oder Status
 - ⚙️ Konfigurierbar: Scan-Intervall, Inaktivitätsschwelle, ignorierte Domains
 
+### Hinweis zu YAML-Helfern
+
+Per **YAML** (`configuration.yaml`) konfigurierte Helfer wie `template`, `statistics`,
+`filter`, `min_max`, `utility_meter`, `history_stats`, `trend`, `threshold`, `tod`,
+`generic_hygrostat`/`generic_thermostat`, `derivative`/`integration` (Riemann) und
+`bayesian` werden **nicht** als verwaist markiert, auch wenn sie kein Gerät und keinen
+Config-Entry besitzen – das ist bei diesen Plattformen normal.
+
+Per **UI** angelegte Helfer (Einstellungen → Geräte & Dienste → Helfer) sind ohnehin
+automatisch geschützt, da sie immer einen Config-Entry besitzen.
+
 ## Installation
 
 ### Via HACS (empfohlen)
