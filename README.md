@@ -28,6 +28,15 @@ Config-Entry besitzen – das ist bei diesen Plattformen normal.
 Per **UI** angelegte Helfer (Einstellungen → Geräte & Dienste → Helfer) sind ohnehin
 automatisch geschützt, da sie immer einen Config-Entry besitzen.
 
+### Hinweis zu Geräte-Sub-Entitäten
+
+Viele Geräte (z.B. Zigbee-Steckdosen) bieten Sub-Entitäten wie „Child lock" an,
+die das jeweilige Gerät nie meldet und die dauerhaft im Status `unknown` bleiben –
+das ist normal und kein Zeichen von Verwaisung. Solche Entitäten werden **nur**
+als „Inaktiv" markiert, wenn **kein** anderes Entity desselben Geräts innerhalb
+der Inaktivitätsschwelle Aktivität zeigt. Ist das Gerät also über andere Entitäten
+aktiv, wird die einzelne `unknown`-Sub-Entität nicht angezeigt.
+
 ## Installation
 
 ### Via HACS (empfohlen)
